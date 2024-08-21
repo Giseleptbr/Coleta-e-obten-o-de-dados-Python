@@ -1,0 +1,164 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/Giseleptbr/Coleta-e-obten-o-de-dados-Python/blob/main/Coleta%20e%20obten%C3%A7%C3%A3o%20de%20dados%20Python\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "CWTRdoK6t-XJ",
+        "outputId": "be3262f0-a1a7-45d8-90e9-b3d6d1678fdc"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Cloning into 'desafio-M2-ABD'...\n",
+            "remote: Enumerating objects: 8, done.\u001b[K\n",
+            "remote: Counting objects: 100% (8/8), done.\u001b[K\n",
+            "remote: Compressing objects: 100% (7/7), done.\u001b[K\n",
+            "remote: Total 8 (delta 0), reused 8 (delta 0), pack-reused 0\u001b[K\n",
+            "Receiving objects: 100% (8/8), 489.83 KiB | 2.75 MiB/s, done.\n"
+          ]
+        }
+      ],
+      "source": [
+        "import pandas as pd\n",
+        "import os\n",
+        "import json\n",
+        "\n",
+        "# Clonando o repositório\n",
+        "!git clone https://github.com/ProfLeandroLessa/desafio-M2-ABD.git\n",
+        "\n",
+        "# Caminho dos arquivos no repositório clonado\n",
+        "path_csv = \"desafio-M2-ABD/datasets/dados_jogadores.csv\"\n",
+        "path_json = \"desafio-M2-ABD/datasets/lista_jogadores_chess.json\"\n",
+        "\n",
+        "# Lendo os datasets\n",
+        "dados_jogadores = pd.read_csv(path_csv, delimiter=\";\")\n",
+        "lista_jogadores_chess = pd.read_json(path_json)\n",
+        "\n",
+        "# Expandindo a coluna \"user\" do dataframe lista_jogadores_chess\n",
+        "df_jogadores_chess_expandido = lista_jogadores_chess['user'].apply(pd.Series)\n",
+        "\n",
+        "# Tratando valores nulos no dataframe dados_jogadores\n",
+        "dados_jogadores['num_vitorias'].where(dados_jogadores['num_vitorias'].notnull(), dados_jogadores['total_partidas'] - dados_jogadores['num_derrotas'], inplace=True)\n",
+        "dados_jogadores['num_derrotas'].where(dados_jogadores['num_derrotas'].notnull(), dados_jogadores['total_partidas'] - dados_jogadores['num_vitorias'], inplace=True)\n",
+        "dados_jogadores['total_partidas'].where(dados_jogadores['total_partidas'].notnull(), dados_jogadores['num_vitorias'] + dados_jogadores['num_derrotas'], inplace=True)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Pergunta 1\n",
+        "media_vitorias_por_pais_geral = dados_jogadores.groupby('pais')['num_vitorias'].mean()\n",
+        "pais_menor_media_vitorias_geral = media_vitorias_por_pais_geral.idxmin()\n",
+        "print(f\"Pergunta 1: O país com a menor média geral de vitórias é {pais_menor_media_vitorias_geral}.\")\n",
+        "\n",
+        "# Pergunta 2\n",
+        "derrotas_argentina_dama = dados_jogadores[(dados_jogadores['pais'] == 'Argentina') & (dados_jogadores['jogo'] == 'Dama')]['num_derrotas'].sum()\n",
+        "print(f\"Pergunta 2: A soma de derrotas da Argentina no jogo da Dama é {derrotas_argentina_dama}.\")\n",
+        "\n",
+        "# Pergunta 3\n",
+        "jogadoras = dados_jogadores[dados_jogadores['genero'] == 'Feminino']\n",
+        "jogo_menor_jogado_feminino = jogadoras['jogo'].value_counts().idxmin()\n",
+        "print(f\"Pergunta 3: O jogo menos jogado entre o público feminino é {jogo_menor_jogado_feminino}.\")\n",
+        "\n",
+        "# Pergunta 5\n",
+        "jogo_menor_numero_partidas = dados_jogadores.groupby('jogo')['total_partidas'].sum().idxmin()\n",
+        "print(f\"Pergunta 5: O jogo que possui o menor número de partidas é {jogo_menor_numero_partidas}.\")\n",
+        "\n",
+        "# Pergunta 6\n",
+        "total_registros_chess = df_jogadores_chess_expandido.shape[0]\n",
+        "print(f\"Pergunta 6: O total de registros na base de dados do chess é {total_registros_chess}.\")\n",
+        "\n",
+        "# Pergunta 7\n",
+        "df_jogadores_chess_expandido['pais_sigla'] = df_jogadores_chess_expandido['country'].str.split('/').str[-1]\n",
+        "total_jogadores_usa_chess = len(df_jogadores_chess_expandido[df_jogadores_chess_expandido['pais_sigla'] == 'US'])\n",
+        "print(f\"Pergunta 7: O total de jogadores dos Estados Unidos é {total_jogadores_usa_chess}.\")\n",
+        "\n",
+        "# Pergunta 8\n",
+        "seguidores_rafael_leitao = df_jogadores_chess_expandido[df_jogadores_chess_expandido['name'] == 'Rafael Leitao']['followers'].values[0]\n",
+        "print(f\"Pergunta 8: O jogador Rafael Leitao possui {seguidores_rafael_leitao} seguidores.\")\n",
+        "\n",
+        "# Pergunta 9\n",
+        "paises_distintos_chess = df_jogadores_chess_expandido['pais_sigla'].nunique()\n",
+        "print(f\"Pergunta 9: O dataset de jogadores_chess possui {paises_distintos_chess} países distintos.\")\n",
+        "\n",
+        "# Pergunta 12\n",
+        "jogadores_mais_45000_seguidores = df_jogadores_chess_expandido[df_jogadores_chess_expandido['followers'] > 45000]['name'].tolist()\n",
+        "print(f\"Pergunta 12: Os jogadores com mais de 45.000 seguidores são: {', '.join(jogadores_mais_45000_seguidores)}.\")\n",
+        "\n",
+        "# Pergunta 13\n",
+        "jogadores_mais_35000_seguidores = df_jogadores_chess_expandido[df_jogadores_chess_expandido['followers'] > 35000][['name', 'location']]\n",
+        "for index, row in jogadores_mais_35000_seguidores.iterrows():\n",
+        "    print(f\"Pergunta 13: O jogador {row['name']} possui mais de 35.000 seguidores e sua localização é {row['location']}.\")\n",
+        "\n",
+        "# Pergunta 14\n",
+        "sigla_pais_gregory_serper = df_jogadores_chess_expandido[df_jogadores_chess_expandido['name'] == 'Gregory Serper']['pais_sigla'].values[0]\n",
+        "print(f\"Pergunta 14: A sigla do país do jogador Gregory Serper é {sigla_pais_gregory_serper}.\")\n",
+        "\n",
+        "# Pergunta 15\n",
+        "localizacao_jorge_ferreira = df_jogadores_chess_expandido[df_jogadores_chess_expandido['name'] == 'Jorge Ferreira']['location'].values[0]\n",
+        "print(f\"Pergunta 15: A localização do jogador Jorge Ferreira é {localizacao_jorge_ferreira}.\")\n"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "dDyF-ISDuiRT",
+        "outputId": "b2d970f3-aca2-4e2e-f70e-aeff5586f01d"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Pergunta 1: O país com a menor média geral de vitórias é Paraguai.\n",
+            "Pergunta 2: A soma de derrotas da Argentina no jogo da Dama é 536.0.\n",
+            "Pergunta 3: O jogo menos jogado entre o público feminino é Jogo da velha.\n",
+            "Pergunta 5: O jogo que possui o menor número de partidas é Jogo da velha.\n",
+            "Pergunta 6: O total de registros na base de dados do chess é 1332.\n",
+            "Pergunta 7: O total de jogadores dos Estados Unidos é 223.\n",
+            "Pergunta 8: O jogador Rafael Leitao possui 1707 seguidores.\n",
+            "Pergunta 9: O dataset de jogadores_chess possui 102 países distintos.\n",
+            "Pergunta 12: Os jogadores com mais de 45.000 seguidores são: Hikaru Nakamura, Magnus Carlsen.\n",
+            "Pergunta 13: O jogador Simon Williams possui mais de 35.000 seguidores e sua localização é Godalming.\n",
+            "Pergunta 13: O jogador Hikaru Nakamura possui mais de 35.000 seguidores e sua localização é Sunrise, Florida.\n",
+            "Pergunta 13: O jogador Magnus Carlsen possui mais de 35.000 seguidores e sua localização é Norway.\n",
+            "Pergunta 14: A sigla do país do jogador Gregory Serper é US.\n",
+            "Pergunta 15: A localização do jogador Jorge Ferreira é Porto.\n"
+          ]
+        }
+      ]
+    }
+  ]
+}
